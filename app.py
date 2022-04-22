@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import json 
@@ -29,7 +29,6 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return "Id: " + str(self.id) + "Name: " + self.name + " Email: " + self.email
-
 class LoanModel(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(512), nullable = False)
@@ -68,10 +67,10 @@ def load_user(user_id):
 def index_home():
     return render_template('index.html')
 
-
 @app.route('/home', methods = ['GET', 'POST'])
+@login_required
 def index():
-    return render_template('index.html')
+    return render_template('index.html', current_user = current_user)
 
 
 @app.route('/login', methods = ['GET', 'POST'])
@@ -84,9 +83,9 @@ def login():
 
         for i in pos_users:
             if i.user_name == user_name and i.user_password == user_password:
-                Buser = User.query.get(i.id)
-                load_user(Buser.id)
-                login_user(Buser)
+                user = User.query.get(i.id)
+                load_user(user.id)
+                login_user(user)
                 return redirect(url_for('index'))
 
     return render_template('login.html')
@@ -97,8 +96,8 @@ def signup():
         user_name = request.form.get('user_name')
         user_password = request.form.get('user_password')
         user_password = ref.SHA256(user_password)
-        Buser = User(name = user_name, password = user_password)
-        db.session.add(Buser)
+        user = User(name = user_name, password = user_password)
+        db.session.add(user)
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -111,32 +110,26 @@ def signout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.route('/api/info', methods = ['GET', 'POST'])
-def api_info():
-    if request.method == 'POST':
-        something = request.form.get('something')
-        something = request.form.get('something')
-        something = request.form.get('something')
-        ##do something
-    return render_template('index.html')
+@app.route('/api/info/user', methods = ['GET', 'POST'])
+@login_required
+def api_info_user():
+    if request.method == 'GET':
+        return jsonify(current_user)
+    return("Request Denied")
 
-@app.route('/api/info2', methods = ['GET', 'POST'])
-def api_info_2():
-    if request.method == 'POST':
-        something = request.form.get('something')
-        something = request.form.get('something')
-        something = request.form.get('something')
-        ##do something
-    return render_template('index.html')
+@app.route('/api/info/userinfo', methods = ['GET', 'POST'])
+@login_required
+def api_info_Userinfo():
+    if request.method == 'GET':
+        return jsonify(current_user.user_info)
+    return("Request Denied")
 
-@app.route('/api/info3', methods = ['GET', 'POST'])
-def api_info_3():
-    if request.method == 'POST':
-        something = request.form.get('something')
-        something = request.form.get('something')
-        something = request.form.get('something')
-        ##do something
-    return render_template('index.html')
+@app.route('/api/info/loan', methods = ['GET', 'POST'])
+@login_required
+def api_loan():
+    if request.method == 'GET':
+        return jsonify(current_user.loan)
+    return("Request Denied")
 
 
 if __name__ == '__main__':
