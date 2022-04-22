@@ -30,6 +30,7 @@ class User(UserMixin, db.Model):
     loan = db.relationship('LoanModel', backref = 'user', lazy = True)
     user_info = db.relationship('Userinfo', backref = 'user', lazy = True)
     user_tnx_info = db.relationship('UserTnx', backref = 'user', lazy = True)
+    digitalMortgage = db.relationship('DigitalMortgage', backref = 'user', lazy = True)
     ## Name, password
 
     def __repr__(self):
@@ -43,6 +44,7 @@ class LoanModel(db.Model):
     loan_duration = db.Column(db.Float, nullable = False)
     loan_paid_time = db.Column(db.String(256), nullable = False)
     loan_type = db.Column(db.String(256), nullable = False)
+    tnx_id = db.Column(db.String(512), nullable = False)
     date = db.Column(db.DateTime , nullable = False, default = datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     ## loan amt and loan duration
@@ -56,6 +58,7 @@ class Userinfo(db.Model):
     no_of_transactions = db.Column(db.Float, nullable = False)
     phn_no = db.Column(db.Float,nullable = False)
     address = db.Column(db.Text, nullable = False)
+    tnx_id = db.Column(db.String(512), nullable = False)
     date = db.Column(db.DateTime , nullable = False, default = datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     ## img, ph, add
@@ -74,6 +77,16 @@ class UserTnx(db.Model):
     
     def __init__(self):
         return "Id: " + str(self.id) + " User Id: " + str(self.tnx_from)
+    
+class DigitalMortgage(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    date = db.Column(db.DateTime , nullable = False, default = datetime.utcnow)
+    mortgage_type = db.Column(db.String(512), nullable = False)
+    assest_link = db.Column(db.String(512), nullable = False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
+    
+    def __repr__(self):
+        return "Id: " + str(self.id)
     
 
 @login_manager.user_loader
@@ -140,6 +153,7 @@ def update():
         return redirect(url_for('index'))
     return render_template('update.html', msg = "An error Happended")
 
+##update +(to) -(from) 
 @app.route('/maketnx', methods=['GET' ,'POST'])
 @login_required
 def maketnx():
@@ -151,7 +165,7 @@ def maketnx():
             return render_template('tnx.html', msg = "Tnx successfully ")
     return render_template('tnx.html', msg = "An error Happended")
 
-@app.route('/api/info/user', methods = ['GET', 'POST'])
+@app.route('/api/info/user', methods = ['GET'])
 @login_required
 def api_info_user():
     if request.method == 'GET':
@@ -159,21 +173,34 @@ def api_info_user():
     return("Request Denied")
 
 
-@app.route('/api/info/userinfo', methods = ['GET', 'POST'])
+@app.route('/api/info/userinfo', methods = ['GET'])
 @login_required
 def api_info_Userinfo():
     if request.method == 'GET':
         return jsonify(current_user.user_info)
     return("Request Denied")
 
-@app.route('/api/info/loan', methods = ['GET', 'POST'])
+
+@app.route('/api/info/loan', methods = ['GET'])
 @login_required
 def api_loan():
     if request.method == 'GET':
         return jsonify(current_user.loan)
     return("Request Denied")
 
+@app.route('/api/info/digitalmortgage', methods = ['GET'])
+@login_required
+def digitalortgage_info():
+    if request.method == 'GET':
+        return jsonify(current_user.digitalMortgage)
+    return("Request Denied")
 
+@app.route('/api/info/usertnx', methods = ['GET'])
+@login_required
+def usertnx_info():
+    if request.method == 'GET':
+        return jsonify(current_user.UserTnx)
+    return("Request Denied")
 
 if __name__ == '__main__':
     app.run(debug = True, threaded = True)
