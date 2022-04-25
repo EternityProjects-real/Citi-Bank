@@ -25,8 +25,10 @@ login_manager.init_app(app)
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(512), nullable = False)
+    bank_balance = db.Column(db.Float, nullable = False)
     password = db.Column(db.String(512), nullable = False)
     account_num = db.Column(db.String(512), nullable = False)
+    no_of_transactions = db.Column(db.Float, nullable = False)
     loan = db.relationship('LoanModel', backref = 'user', lazy = True)
     user_info = db.relationship('Userinfo', backref = 'user', lazy = True)
     user_tnx_info = db.relationship('UserTnx', backref = 'user', lazy = True)
@@ -42,7 +44,6 @@ class LoanModel(db.Model):
     loan_amt_paid = db.Column(db.Float, nullable = False)
     loan_amt_percent = db.Column(db.Float, nullable = False)
     loan_duration = db.Column(db.Float, nullable = False)
-    loan_paid_time = db.Column(db.String(256), nullable = False)
     loan_type = db.Column(db.String(256), nullable = False)
     tnx_id = db.Column(db.String(512), nullable = False)
     date = db.Column(db.DateTime , nullable = False, default = datetime.utcnow)
@@ -54,8 +55,6 @@ class LoanModel(db.Model):
 
 class Userinfo(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    bank_balance = db.Column(db.Float, nullable = False)
-    no_of_transactions = db.Column(db.Float, nullable = False)
     phn_no = db.Column(db.Float,nullable = False)
     address = db.Column(db.Text, nullable = False)
     tnx_id = db.Column(db.String(512), nullable = False)
@@ -73,6 +72,7 @@ class UserTnx(db.Model):
     tnx_from = db.Column(db.Float, nullable = False)
     tnx_amt = db.Column(db.Float,nullable = False)
     tnx_type = db.Column(db.String(512), nullable = False)
+    tnx_id = db.Column(db.String(512), nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     
     def __init__(self):
@@ -83,12 +83,12 @@ class DigitalMortgage(db.Model):
     date = db.Column(db.DateTime , nullable = False, default = datetime.utcnow)
     mortgage_type = db.Column(db.String(512), nullable = False)
     assest_link = db.Column(db.String(512), nullable = False)
+    estimated_amount = db.Column(db.Float, nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     
     def __repr__(self):
         return "Id: " + str(self.id)
     
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -128,7 +128,7 @@ def signup():
         user_password = request.form.get('user_password')
         user_password = ref.SHA256(user_password)
         acct_num = ref.SHA256(str(user_name) + str(user_password))
-        user = User(name = user_name, password = user_password, account_num = acct_num)
+        user = User(name = user_name, password = user_password, account_num = acct_num, bank_balance = float(rint(10000,100000)), no_of_transactions = 0)
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('index'))
@@ -158,12 +158,73 @@ def update():
 @login_required
 def maketnx():
     if request.method == 'POST':
-        if float(request.form.get('tnx_from')) == current_user.account_num: 
-            tnx_info = UserTnx(tnx_to = request.form.get('tnx_to'),tnx_from = request.form.get('tnx_from'),tnx_amt = float(request.form.get('tnx_amt')),tnx_type = str(request.form.get('tnx_type')),user_id = current_user.id)
+        tnx_to = request.form.get('tnx_to')
+        tnx_from = request.form.get('tnx_from')
+        tnx_amt = float(request.form.get('tnx_amt'))
+        tnx_type = "Sending Money"
+        tnx_type_to = "Reciving Money"
+        
+        if str(request.form.get('tnx_from')) == current_user.account_num:
+            
+            pos_users = User.query.filter_by(account_num = tnx_from)
+            
+            for i in pos_users:
+                if i.account_num == tnx_from:
+                    user_to = User.query.get(i.id)
+            
+            user_to.no_of_transactions += 1
+            user_to.bank_balance -= tnx_amt
+            
+            current_user.no_of_transactions += 1
+            current_user.bank_balance -= tnx_amt
+            tnx_id = ref.SHA256(tnx_to + tnx_from + tnx_amt + tnx_type + tnx_type_to)
+            
+            tnx_info = UserTnx(tnx_to = tnx_to ,tnx_from = tnx_from,tnx_amt = tnx_amt,tnx_type = tnx_type, tnx_id = tnx_id, user_id = current_user.id)
+            tnx_info_to = UserTnx(tnx_to = tnx_to, tnx_from = tnx_from, tnx_amt = tnx_amt, tnx_type = tnx_type_to, tnx_id = tnx_id, user_id = user_to.id)
+            
             db.session.add(tnx_info)
+            db.session.add(tnx_info_to)
             db.session.commit()
+            
             return render_template('tnx.html', msg = "Tnx successfully ")
     return render_template('tnx.html', msg = "An error Happended")
+
+
+@app.route('/applylaon', methods = ['GET', 'POST'])
+@login_required
+def applylaon():
+    if request.method == 'POST':
+        loan_amt = request.form.get('loan_amt')
+        loan_amt_percent = request.form.get('loan_amt_percent')
+        loan_duration = request.form.get('loan_duration')
+        loan_type = request.form.get('loan_type')
+        tnx_id = ref.SHA256(loan_amt + loan_amt_percent + loan_duration + loan_type)
+        ##put in the nessary checks
+        
+        loanModel = LoanModel(name = current_user.name, loan_amt = loan_amt, loan_amt_paid = 0.0, loan_amt_percent = loan_amt_percent, loan_duration = loan_duration, loan_type = loan_type, tnx_id = tnx_id, user_id = current_user.id)
+        
+        db.session.add(loanModel)
+        db.session.commit()
+        return render_template('applylaon.html', msg = "Loan applied!!")    
+    return render_template('applylaon.html')
+
+
+
+@app.route('/digitalAssestinfo')
+@login_required
+def digitalAssestinfo():
+    if request.method == 'POST':
+        mortgage_type = request.form.get('mortgage_type')
+        assest_link = request.form.get('assest_link')
+        estimated_amount = request.form.get('estimated_amount')
+        
+        migitalmortgage = DigitalMortgage(mortgage_type = mortgage_type, assest_link = assest_link, estimated_amount = estimated_amount, user_id = current_user.id)
+        
+        db.session.add(migitalmortgage)
+        db.session.commit()
+        return render_template('index.html', msg = "Uploaded Successfully")
+    return render_template('index.html')
+
 
 @app.route('/api/info/user', methods = ['GET'])
 @login_required
@@ -190,7 +251,7 @@ def api_loan():
 
 @app.route('/api/info/digitalmortgage', methods = ['GET'])
 @login_required
-def digitalortgage_info():
+def digitalmortgage_info():
     if request.method == 'GET':
         return jsonify(current_user.digitalMortgage)
     return("Request Denied")
@@ -201,6 +262,7 @@ def usertnx_info():
     if request.method == 'GET':
         return jsonify(current_user.UserTnx)
     return("Request Denied")
+
 
 if __name__ == '__main__':
     app.run(debug = True, threaded = True)
