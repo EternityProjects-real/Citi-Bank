@@ -26,9 +26,11 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(512), nullable = False)
     bank_balance = db.Column(db.Float, nullable = False)
+    assest_balance = db.Column(db.Float, nullable = False)
     password = db.Column(db.String(512), nullable = False)
     account_num = db.Column(db.String(512), nullable = False)
     no_of_transactions = db.Column(db.Float, nullable = False)
+    loan_assest_balance = db.Column(db.Float, nullable = False)
     loan = db.relationship('LoanModel', backref = 'user', lazy = True)
     user_info = db.relationship('Userinfo', backref = 'user', lazy = True)
     user_tnx_info = db.relationship('UserTnx', backref = 'user', lazy = True)
@@ -57,7 +59,7 @@ class Userinfo(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     phn_no = db.Column(db.Float,nullable = False)
     address = db.Column(db.Text, nullable = False)
-    tnx_id = db.Column(db.String(512), nullable = False)
+    age = db.Column(db.String(512), nullable = False)
     date = db.Column(db.DateTime , nullable = False, default = datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     ## img, ph, add
@@ -93,14 +95,12 @@ class DigitalMortgage(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-@app.route('/', methods = ['GET', 'POST'])
-def index_home():
-    return render_template('index2.html')
 
-@app.route('/home', methods = ['GET', 'POST'])
-@login_required
+@app.route('/', methods = ['GET', 'POST'])
 def index():
-    return render_template('index.html', current_user = current_user)
+    if current_user:
+        return render_template('index.html', current_user = current_user)
+    return render_template('index.html', current_user  = False)
 
 
 @app.route('/login', methods = ['GET', 'POST'])
@@ -116,7 +116,8 @@ def login():
                 user = User.query.get(i.id)
                 load_user(user.id)
                 login_user(user)
-                return redirect(url_for('index'))
+                return render_template('index.html', current_user = current_user, msg = "Loged in!!")
+                
 
     return render_template('login.html')
 
@@ -128,10 +129,11 @@ def signup():
         user_password = request.form.get('user_password')
         user_password = ref.SHA256(user_password)
         acct_num = ref.SHA256(str(user_name) + str(user_password))
-        user = User(name = user_name, password = user_password, account_num = acct_num, bank_balance = float(rint(10000,100000)), no_of_transactions = 0)
+        user = User(name = user_name, password = user_password, account_num = acct_num, bank_balance = float(rint(10000,100000)), no_of_transactions = 0, assest_balance = 0.0, loan_assest_balance = 0.0)
         db.session.add(user)
         db.session.commit()
-        return redirect(url_for('index'))
+        return render_template('index.html', current_user = current_user, msg = "Log in!!")
+        
 
     return render_template('login.html')
 
@@ -147,11 +149,11 @@ def signout():
 @login_required
 def update():
     if request.method == 'POST':
-        userinfo = Userinfo(bank_balance = rint(10000, 10000000000), no_of_transactions = 0.0, phn_no = str(request.form.get('phn_no')), address = str(request.form.get('address')), user_id = current_user.id)
+        userinfo = Userinfo(phn_no = str(request.form.get('phn_no')), address = str(request.form.get('address')), age = str(request.form.get('age')),user_id = current_user.id)
         db.session.add(userinfo)
         db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('update.html', msg = "An error Happended")
+        return render_template('index.html', current_user = current_user, msg = "Updated!!")
+    return render_template('index.html', msg = "An error Happended")
 
 ##update +(to) -(from) 
 @app.route('/maketnx', methods=['GET' ,'POST'])
@@ -186,8 +188,8 @@ def maketnx():
             db.session.add(tnx_info_to)
             db.session.commit()
             
-            return render_template('tnx.html', msg = "Tnx successfully ")
-    return render_template('tnx.html', msg = "An error Happended")
+            return render_template('index.html', msg = "Tnx successfully ")
+    return render_template('index.html', msg = "An error Happended")
 
 
 @app.route('/applylaon', methods = ['GET', 'POST'])
@@ -198,15 +200,19 @@ def applylaon():
         loan_amt_percent = request.form.get('loan_amt_percent')
         loan_duration = request.form.get('loan_duration')
         loan_type = request.form.get('loan_type')
+        if current_user.assest_balance >= current_user.loan_assest_balance:
+            return render_template('index.html',current_user = current_user, msg = "Asset balance less than loan amount!")
         tnx_id = ref.SHA256(loan_amt + loan_amt_percent + loan_duration + loan_type)
         ##put in the nessary checks
         
         loanModel = LoanModel(name = current_user.name, loan_amt = loan_amt, loan_amt_paid = 0.0, loan_amt_percent = loan_amt_percent, loan_duration = loan_duration, loan_type = loan_type, tnx_id = tnx_id, user_id = current_user.id)
         
+        current_user.loan_assest_balance += float(loan_amt)
+        
         db.session.add(loanModel)
         db.session.commit()
-        return render_template('applylaon.html', msg = "Loan applied!!")    
-    return render_template('applylaon.html')
+        return render_template('index2.html', msg = "Loan applied!!")    
+    return render_template('index2.html')
 
 
 
@@ -220,10 +226,12 @@ def digitalAssestinfo():
         
         migitalmortgage = DigitalMortgage(mortgage_type = mortgage_type, assest_link = assest_link, estimated_amount = estimated_amount, user_id = current_user.id)
         
+        current_user.assest_balance += estimated_amount
+        
         db.session.add(migitalmortgage)
         db.session.commit()
-        return render_template('index.html', msg = "Uploaded Successfully")
-    return render_template('index.html')
+        return render_template('index2.html', msg = "Uploaded Successfully")
+    return render_template('index2.html')
 
 
 @app.route('/api/info/user', methods = ['GET'])
