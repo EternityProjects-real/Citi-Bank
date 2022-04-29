@@ -38,7 +38,7 @@ class User(UserMixin, db.Model):
     ## Name, password
 
     def __repr__(self):
-        return "Id: " + str(self.id) + "Name: " + self.name + " Email: " + self.email
+        return "Id: " + str(self.id) + "Name: " + self.name + " Bank Balance: " + str(self.bank_balance)
 class LoanModel(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(512), nullable = False)
@@ -99,7 +99,7 @@ def load_user(user_id):
 @app.route('/', methods = ['GET', 'POST'])
 def index():
     if current_user:
-        return render_template('index.html', current_user = current_user)
+        return render_template('index.html', current_user = current_user, val = True)
     return render_template('index.html', current_user  = False)
 
 
@@ -116,7 +116,7 @@ def login():
                 user = User.query.get(i.id)
                 load_user(user.id)
                 login_user(user)
-                return render_template('index.html', current_user = current_user, msg = "Loged in!!")
+                return render_template('index.html', current_user = current_user, msg = "Loged in!!", val = True)
                 
 
     return render_template('login.html')
@@ -132,7 +132,7 @@ def signup():
         user = User(name = user_name, password = user_password, account_num = acct_num, bank_balance = float(rint(10000,100000)), no_of_transactions = 0, assest_balance = 0.0, loan_assest_balance = 0.0)
         db.session.add(user)
         db.session.commit()
-        return render_template('index.html', current_user = current_user, msg = "Log in!!")
+        return redirect(url_for('index'))
         
 
     return render_template('login.html')
@@ -152,7 +152,7 @@ def update():
         userinfo = Userinfo(phn_no = str(request.form.get('phn_no')), address = str(request.form.get('address')), age = str(request.form.get('age')),user_id = current_user.id)
         db.session.add(userinfo)
         db.session.commit()
-        return render_template('index.html', current_user = current_user, msg = "Updated!!")
+        return render_template('index.html', current_user = current_user, msg = "Updated!!", val = True)
     return render_template('index.html', msg = "An error Happended")
 
 ##update +(to) -(from) 
@@ -188,7 +188,7 @@ def maketnx():
             db.session.add(tnx_info_to)
             db.session.commit()
             
-            return render_template('index.html', msg = "Tnx successfully ")
+            return render_template('index.html', msg = "Tnx successfully ", val = True)
     return render_template('index.html', msg = "An error Happended")
 
 
@@ -200,7 +200,7 @@ def applylaon():
         loan_amt_percent = request.form.get('loan_amt_percent')
         loan_duration = request.form.get('loan_duration')
         loan_type = request.form.get('loan_type')
-        if current_user.assest_balance >= current_user.loan_assest_balance:
+        if current_user.assest_balance <= current_user.loan_assest_balance:
             return render_template('index.html',current_user = current_user, msg = "Asset balance less than loan amount!")
         tnx_id = ref.SHA256(loan_amt + loan_amt_percent + loan_duration + loan_type)
         ##put in the nessary checks
@@ -211,7 +211,7 @@ def applylaon():
         
         db.session.add(loanModel)
         db.session.commit()
-        return render_template('index2.html', msg = "Loan applied!!")    
+        return render_template('index2.html', msg = "Loan applied!!", val = True)    
     return render_template('index2.html')
 
 
@@ -230,7 +230,7 @@ def digitalAssestinfo():
         
         db.session.add(migitalmortgage)
         db.session.commit()
-        return render_template('index2.html', msg = "Uploaded Successfully")
+        return render_template('index2.html', msg = "Uploaded Successfully", val = True)
     return render_template('index2.html')
 
 
