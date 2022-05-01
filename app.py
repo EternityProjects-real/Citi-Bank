@@ -119,7 +119,7 @@ def login():
                 return render_template('index.html', current_user = current_user, msg = "Loged in!!", val = True)
                 
 
-    return render_template('login.html')
+    return render_template('Sign_up.html')
 
 
 @app.route('/signup', methods = ['GET', 'POST'])
@@ -135,7 +135,7 @@ def signup():
         return redirect(url_for('index'))
         
 
-    return render_template('login.html')
+    return render_template('Sign_up.html')
 
 
 @app.route('/signout', methods = ['GET', 'POST'])

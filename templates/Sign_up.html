@@ -26,10 +26,10 @@
         <div class="flex-container">
             <div class="Spacing">
                 <div class="grp">
-                    <form>
+                    <form method="post" action="/signup">
                         <p><b>Sign Up</b></p>
-                        <input type="email" placeholder="Email"><br>
-                        <input type="password" placeholder="Password"><br>
+                        <input type="text" placeholder="Name" name="user_name"><br>
+                        <input type="password" placeholder="Password" name="user_password"><br>
                         <input type="button" value="Register"><br>
                         <a href="#">More Information</a>
                     </form>
@@ -38,10 +38,10 @@
 
             <div class="Spacing">
                 <div class="grp">
-                    <form>
+                    <form method="post" action="/login">
                         <p><b>Login</b></p>
-                        <input type="email" placeholder="Email"><br>
-                        <input type="password" placeholder="Password"><br>
+                        <input type="text" placeholder="Name" name="user_name"><br>
+                        <input type="password" placeholder="Password" name="user_password"><br>
                         <input type="button" value="Sign in"><br>
                         <a href="#">Forgot Password?</a>
                     </form>

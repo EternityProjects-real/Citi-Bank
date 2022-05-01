@@ -210,12 +210,12 @@
                                     Make Transactions
                                     </span>
                                 <div class="app-card__subtext">Make seamless transactions.</div>
-                                <form>
-                                    <input type="email" placeholder="Email"><br>
-                                    <input type="password" placeholder="Password"><br>
-                                    <input type="text" placeholder="Sign in"><br>
+                                <form method="post" action="/maketnx">
+                                    <input type="text" placeholder="Your Id" name="tnx_to"><br>
+                                    <input type="text" placeholder="Reciver Number" name="tnx_from"><br>
+                                    <input type="text" placeholder="Amount" name="tnx_amt"><br>
                                     <div class="app-card-buttons">
-                                        <button class="content-button status-button">Transaction</button>
+                                        <button type="submit" class="content-button status-button">Transaction</button>
                                         <div class="menu"></div>
                                     </div>
                                 </form>
@@ -227,12 +227,12 @@
                Apply for loan
               </span>
                                 <div class="app-card__subtext">Apply for loan </div>
-                                <form>
-                                    <input type="email" placeholder="Email"><br>
-                                    <input type="password" placeholder="Password"><br>
-                                    <input type="text" placeholder="Sign in"><br>
+                                <form method="post" action="/applylaon">
+                                    <input type="text" placeholder="Loan Amount" name="loan_amt"><br>
+                                    <input type="text" placeholder="Loan Percentage" name="loan_amt_percent"><br>
+                                    <input type="text" placeholder="Loan Duration" name="loan_duration"><br>
                                     <div class="app-card-buttons">
-                                        <button class="content-button status-button">Apply</button>
+                                        <button type="submit" class="content-button status-button">Apply</button>
                                         <div class="menu"></div>
                                     </div>
                                 </form>
@@ -243,12 +243,12 @@
                Digital Assets
               </span>
                                 <div class="app-card__subtext">Digital Assets and Information</div>
-                                <form>
-                                    <input type="email" placeholder="Email"><br>
-                                    <input type="password" placeholder="Password"><br>
-                                    <input type="text" placeholder="Sign in"><br>
+                                <form method="post" action="/digitalAssestinfo">
+                                    <input type="text" placeholder="Mortgage Type" name="mortgage_type"><br>
+                                    <input type="text" placeholder="Asset Link" name="assest_link"><br>
+                                    <input type="text" placeholder="Estimated Amount" name="estimated_amount"><br>
                                     <div class="app-card-buttons">
-                                        <button class="content-button status-button">Declare</button>
+                                        <button type="submit" class="content-button status-button">Declare</button>
                                         <div class="menu"></div>
                                     </div>
                                 </form>
