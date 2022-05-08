@@ -1,4 +1,4 @@
-# Citi-Bank <a href="https://github.com/EternityProjects-real/Citi-Bank"> <img align="right" align="center" src="https://cdn.discordapp.com/attachments/844331647259508749/848097154685468682/unknown.png" alt="EtherReal" height="97.35" width="88.64" />
+# Citi-Bank <a href="https://github.com/EternityProjects-real/Citi-Bank"> <img align="right" align="center" />
 </a>
 
 **Brought to you with :heart: by** &nbsp;<a href="https://github.com/EternityProjects-real">
